@@ -1,98 +1,83 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# TrueNorth Backend
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+NestJS + TypeScript backend for **TrueNorth**, an AI-powered decision assistant (what to eat, wear, watch, where to go, what to pack, etc.). Uses TypeORM + PostgreSQL and an optional OpenAI (or mock) provider for AI.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+---
 
-## Description
+## Progress (what’s done)
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+- **Config & env** – DB and app config from `.env`; validated at startup. See `.env.example`.
+- **Health** – `GET /health` and `GET /ready` for liveness/readiness (e.g. Render).
+- **AI module** – LLM behind an interface: **mock provider** by default (no API key = no cost), **OpenAI provider** when `OPENAI_API_KEY` is set. `AiService.generateCompletion(messages)` is the single entry point.
+- **Test endpoint** – `GET /ai/test` returns one AI reply (mock or real) so you can confirm the pipeline.
+- **Recommendations module (A4)** – `RecommendationCardDto` and `RecommendationsService.parseFromAI()` to turn AI output into recommendation cards. Test via `GET /recommendations/test` (used by the guided flow in A5).
+
+**Next up (for whoever picks this up):** A5 – Guided flow (`POST /decisions/guided` with category + answers → prompt → AI → recommendation cards). Then chat mode and CORS for the frontend.
+
+---
+
+## After you pull (quick start)
+
+Thanks for jumping in. To get running locally:
+
+1. **Install dependencies**
+   ```bash
+   npm install
+   ```
+
+2. **Environment**
+   - Copy `.env.example` to `.env`.
+   - Fill in your local DB settings (PostgreSQL). Leave `OPENAI_API_KEY` empty to use the mock (no cost).
+
+3. **Run**
+   ```bash
+   npm run start:dev
+   ```
+
+4. **Quick check**
+   - [http://localhost:3000](http://localhost:3000) → `Hello World!`
+   - [http://localhost:3000/health](http://localhost:3000/health) → `{"status":"ok",...}`
+   - [http://localhost:3000/ai/test](http://localhost:3000/ai/test) → `{"reply":"[Mock AI – no API called]..."}`
+   - [http://localhost:3000/recommendations/test](http://localhost:3000/recommendations/test) → `{"recommendations":[{ "title", "description", "type" }]}`
+
+5. **Tests (recommended before you commit)**
+   ```bash
+   npm run test:e2e
+   npm run build
+   ```
+
+If anything’s unclear or you want to change the structure, just ask. Have fun building.
+
+---
 
 ## Project setup
 
 ```bash
-$ npm install
+npm install
+cp .env.example .env   # then edit .env with your DB and optional OPENAI_API_KEY
 ```
 
-## Compile and run the project
+## Scripts
 
-```bash
-# development
-$ npm run start
+| Command | Description |
+|--------|-------------|
+| `npm run start:dev` | Run in watch mode (development). |
+| `npm run build` | Compile for production. |
+| `npm run start:prod` | Run compiled app (node dist/main). |
+| `npm run test` | Unit tests. |
+| `npm run test:e2e` | E2E tests (hits `/`, `/ai/test`, `/recommendations/test`). |
 
-# watch mode
-$ npm run start:dev
+## Environment
 
-# production mode
-$ npm run start:prod
-```
-
-## Run tests
-
-```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
-```
+See `.env.example`. Required: `DATABASE_*`. Optional: `OPENAI_API_KEY` (if set and not `AI_USE_MOCK=true`, the app uses the real OpenAI API). `AI_USE_MOCK=true` forces the mock provider.
 
 ## Deployment
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+Backend is intended to run on **Render**. Set env vars in the Render dashboard (same keys as in `.env.example`). Use `GET /health` (and optionally `GET /ready`) for health checks.
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+---
 
-```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
-```
+## NestJS resources
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
-
-## Resources
-
-Check out a few resources that may come in handy when working with NestJS:
-
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+- [NestJS Docs](https://docs.nestjs.com)
+- [NestJS Deployment](https://docs.nestjs.com/deployment)
