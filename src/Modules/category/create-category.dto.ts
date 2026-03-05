@@ -1,5 +1,5 @@
 export class CreateCategoryDto {
   name: string;
-  iconUrl: string;
-  description?: string;
+  iconUrl?: string;
+  description?: string | null;
 }

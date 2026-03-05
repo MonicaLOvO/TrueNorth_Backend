@@ -19,12 +19,26 @@ export class CategoryRepository {
     });
   }
 
+  async findById(id: string): Promise<Category | null> {
+    return this.repo.findOne({
+      where: { Id: id },
+    });
+  }
+
   async createAndSave(input: CreateCategoryDto): Promise<Category> {
     const entity = this.repo.create({
       name: input.name,
-      iconUrl: input.iconUrl?.trim() ? input.iconUrl : '',
-      description: input.description?.trim() ? input.description : '',
+      iconUrl: input.iconUrl?.trim() ? input.iconUrl.trim() : null,
+      description: input.description?.trim() ? input.description.trim() : null,
     });
     return this.repo.save(entity);
+  }
+
+  async save(entity: Category): Promise<Category> {
+    return this.repo.save(entity);
+  }
+
+  async softDeleteById(id: string): Promise<void> {
+    await this.repo.softDelete({ Id: id });
   }
 }

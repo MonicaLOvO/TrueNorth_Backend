@@ -7,8 +7,8 @@ export class Category extends Tracking {
   name: string;
 
   @Column({ type: 'varchar', length: 500, nullable: true })
-  iconUrl?: string;
+  iconUrl: string | null;
 
   @Column({ type: 'text', nullable: true })
-  description?: string;
+  description: string | null;
 }
