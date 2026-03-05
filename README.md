@@ -31,7 +31,7 @@ Thanks for jumping in. To get running locally:
 
 3. **Run**
    ```bash
-   npm run start:dev
+   npm run dev
    ```
 
 4. **Quick check**
@@ -43,7 +43,7 @@ Thanks for jumping in. To get running locally:
 5. **Tests (recommended before you commit)**
    ```bash
    npm run test:e2e
-   npm run build
+   npm run dev
    ```
 
 If anything’s unclear or you want to change the structure, just ask. Have fun building.

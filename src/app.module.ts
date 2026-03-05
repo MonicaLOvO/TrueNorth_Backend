@@ -16,15 +16,18 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 
 import configuration from './config/configuration';
+import { getTypeOrmEntityGlobs } from './config/typeorm-entities';
 
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AiModule } from './ai/ai.module.js';
+import { CategoryModule } from './Modules/category/category.module.js';
 import { RecommendationsModule } from './recommendations/recommendations.module.js';
 
 @Module({
   imports: [
     AiModule,
+    CategoryModule,
     RecommendationsModule,
     // -------------------------------------------------------------------------
     // Config: load .env and our configuration. The 'load' array runs
@@ -50,6 +53,7 @@ import { RecommendationsModule } from './recommendations/recommendations.module.
         username: config.get<string>('database.username'),
         password: config.get<string>('database.password'),
         database: config.get<string>('database.name'),
+        entities: getTypeOrmEntityGlobs(),
         autoLoadEntities: true, // Load entities from any module that uses TypeOrmModule.forFeature()
         synchronize: true, // ONLY for development – creates/updates tables from entities. Use migrations in prod.
       }),
