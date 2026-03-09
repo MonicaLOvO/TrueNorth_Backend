@@ -23,11 +23,17 @@ import { AppService } from './app.service';
 import { AiModule } from './ai/ai.module.js';
 import { CategoryModule } from './Modules/category/category.module.js';
 import { RecommendationsModule } from './recommendations/recommendations.module.js';
+import { UserModule } from './Modules/user/user.module.js';
+import { ChatModule } from './Modules/chat/chat.module.js';
+import { ExploreModule } from './Modules/explore/explore.module.js';
 
 @Module({
   imports: [
     AiModule,
     CategoryModule,
+    UserModule,
+    ChatModule,
+    ExploreModule,
     RecommendationsModule,
     // -------------------------------------------------------------------------
     // Config: load .env and our configuration. The 'load' array runs

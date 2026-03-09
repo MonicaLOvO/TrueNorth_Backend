@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { Category } from './category.entity.js';
+import { Category } from './entity/category.entity.js';
 import {
   autoRegisterControllers,
   autoRegisterProviders,

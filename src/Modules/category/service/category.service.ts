@@ -1,8 +1,8 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { CategoryRepository } from './category.repository.js';
-import { CreateCategoryDto } from './create-category.dto.js';
-import { CategoryDto } from './category.dto.js';
-import { Category } from './category.entity.js';
+import { CategoryRepository } from '../repository/category.repository.js';
+import { CreateCategoryDto } from '../dto/create-category.dto.js';
+import { CategoryDto } from '../dto/category.dto.js';
+import { Category } from '../entity/category.entity.js';
 
 @Injectable()
 export class CategoryService {
@@ -44,8 +44,7 @@ export class CategoryService {
     if (!entity) {
       throw new NotFoundException(`Category with id '${id}' not found`);
     }
-    if(!input.name)
-    {
+    if (!input.name) {
       throw new BadRequestException('name is required');
     }
 

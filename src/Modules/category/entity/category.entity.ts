@@ -1,5 +1,5 @@
 import { Column, Entity } from 'typeorm';
-import { Tracking } from '../../common/entity/tracking.entity.js';
+import { Tracking } from '../../../common/entity/tracking.entity.js';
 
 @Entity('categories')
 export class Category extends Tracking {
