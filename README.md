@@ -10,9 +10,29 @@ NestJS + TypeScript backend for **TrueNorth**, an AI-powered decision assistant 
 - **Health** – `GET /health` and `GET /ready` for liveness/readiness (e.g. Render).
 - **AI module** – LLM behind an interface: **mock provider** by default (no API key = no cost), **OpenAI provider** when `OPENAI_API_KEY` is set. `AiService.generateCompletion(messages)` is the single entry point.
 - **Test endpoint** – `GET /ai/test` returns one AI reply (mock or real) so you can confirm the pipeline.
-- **Recommendations module (A4)** – `RecommendationCardDto` and `RecommendationsService.parseFromAI()` to turn AI output into recommendation cards. Test via `GET /recommendations/test` (used by the guided flow in A5).
+- **Recommendations module (A4)** – `RecommendationCardDto` and `RecommendationsService.parseFromAI()` to turn AI output into recommendation cards. Test via `GET /recommendations/test`.
+- **Decisions module** – Guided and chat flows: `POST /decisions/guided` (category + answers → recommendations), `POST /decisions/chat` (messages → AI reply + recommendations). Frontend can build UI against these.
 
-**Next up (for whoever picks this up):** A5 – Guided flow (`POST /decisions/guided` with category + answers → prompt → AI → recommendation cards). Then chat mode and CORS for the frontend.
+**Next up:** CORS for frontend origin, optional structured AI output for richer cards.
+
+---
+
+## API for frontend (decisions)
+
+Base URL: your backend (e.g. `http://localhost:3000`).
+
+| Method | Path | Purpose |
+|--------|------|---------|
+| POST | `/decisions/guided` | User picked a category and answered questions → returns recommendation cards. |
+| POST | `/decisions/chat` | User sent chat messages → returns AI reply + recommendation cards. |
+
+**Guided** – Request body: `{ "categoryId": "<uuid from GET /categories>", "answers": { "time": "dinner", "mood": "cozy", ... } }`.  
+Response: `{ "recommendations": [{ "title", "description", "link?", "type?" }, ...] }`.
+
+**Chat** – Request body: `{ "messages": [{ "role": "user" | "assistant", "content": "..." }] }`.  
+Response: `{ "message": "<AI reply text>", "recommendations": [...] }`.
+
+The frontend can start implementing the UI and call these endpoints. No auth required for MVP.
 
 ---
 

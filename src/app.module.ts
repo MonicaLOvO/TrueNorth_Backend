@@ -26,6 +26,7 @@ import { RecommendationsModule } from './recommendations/recommendations.module.
 import { UserModule } from './Modules/user/user.module.js';
 import { ChatModule } from './Modules/chat/chat.module.js';
 import { ExploreModule } from './Modules/explore/explore.module.js';
+import { DecisionsModule } from './Modules/decisions/decisions.module.js';
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { ExploreModule } from './Modules/explore/explore.module.js';
     UserModule,
     ChatModule,
     ExploreModule,
+    DecisionsModule,
     RecommendationsModule,
     // -------------------------------------------------------------------------
     // Config: load .env and our configuration. The 'load' array runs
