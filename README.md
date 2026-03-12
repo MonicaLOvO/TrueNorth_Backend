@@ -1,103 +1,278 @@
 # TrueNorth Backend
 
-NestJS + TypeScript backend for **TrueNorth**, an AI-powered decision assistant (what to eat, wear, watch, where to go, what to pack, etc.). Uses TypeORM + PostgreSQL and an optional OpenAI (or mock) provider for AI.
+NestJS + TypeScript backend for the TrueNorth decision assistant.
 
----
+## Frontend Developer Quick Start
 
-## Progress (what’s done)
+If you are integrating frontend for the first time, follow this section only.
 
-- **Config & env** – DB and app config from `.env`; validated at startup. See `.env.example`.
-- **Health** – `GET /health` and `GET /ready` for liveness/readiness (e.g. Render).
-- **AI module** – LLM behind an interface: **mock provider** by default (no API key = no cost), **OpenAI provider** when `OPENAI_API_KEY` is set. `AiService.generateCompletion(messages)` is the single entry point.
-- **Test endpoint** – `GET /ai/test` returns one AI reply (mock or real) so you can confirm the pipeline.
-- **Recommendations module (A4)** – `RecommendationCardDto` and `RecommendationsService.parseFromAI()` to turn AI output into recommendation cards. Test via `GET /recommendations/test`.
-- **Decisions module** – Guided and chat flows: `POST /decisions/guided` (category + answers → recommendations), `POST /decisions/chat` (messages → AI reply + recommendations). Frontend can build UI against these.
-
-**Next up:** CORS for frontend origin, optional structured AI output for richer cards.
-
----
-
-## API for frontend (decisions)
-
-Base URL: your backend (e.g. `http://localhost:3000`).
-
-| Method | Path | Purpose |
-|--------|------|---------|
-| POST | `/decisions/guided` | User picked a category and answered questions → returns recommendation cards. |
-| POST | `/decisions/chat` | User sent chat messages → returns AI reply + recommendation cards. |
-
-**Guided** – Request body: `{ "categoryId": "<uuid from GET /categories>", "answers": { "time": "dinner", "mood": "cozy", ... } }`.  
-Response: `{ "recommendations": [{ "title", "description", "link?", "type?" }, ...] }`.
-
-**Chat** – Request body: `{ "messages": [{ "role": "user" | "assistant", "content": "..." }] }`.  
-Response: `{ "message": "<AI reply text>", "recommendations": [...] }`.
-
-The frontend can start implementing the UI and call these endpoints. No auth required for MVP.
-
----
-
-## After you pull (quick start)
-
-Thanks for jumping in. To get running locally:
-
-1. **Install dependencies**
-   ```bash
-   npm install
-   ```
-
-2. **Environment**
-   - Copy `.env.example` to `.env`.
-   - Fill in your local DB settings (PostgreSQL). Leave `OPENAI_API_KEY` empty to use the mock (no cost).
-
-3. **Run**
-   ```bash
-   npm run dev
-   ```
-
-4. **Quick check**
-   - [http://localhost:3000](http://localhost:3000) → `Hello World!`
-   - [http://localhost:3000/health](http://localhost:3000/health) → `{"status":"ok",...}`
-   - [http://localhost:3000/ai/test](http://localhost:3000/ai/test) → `{"reply":"[Mock AI – no API called]..."}`
-   - [http://localhost:3000/recommendations/test](http://localhost:3000/recommendations/test) → `{"recommendations":[{ "title", "description", "type" }]}`
-
-5. **Tests (recommended before you commit)**
-   ```bash
-   npm run test:e2e
-   npm run dev
-   ```
-
-If anything’s unclear or you want to change the structure, just ask. Have fun building.
-
----
-
-## Project setup
+### 1) Install and run
 
 ```bash
 npm install
-cp .env.example .env   # then edit .env with your DB and optional OPENAI_API_KEY
 ```
+
+Create `.env` from `.env.example`, then set your database values (`DATABASE_*`).
+
+Minimum `.env` example:
+
+```env
+DATABASE_HOST=localhost
+DATABASE_PORT=5432
+DATABASE_USERNAME=postgres
+DATABASE_PASSWORD=your_password_here
+DATABASE_NAME=truenorth
+AI_USE_MOCK=false
+AI_CONNECTION_ENCRYPTION_KEY=replace_with_a_long_random_secret
+```
+
+AI connection setup (pick one):
+- Mock only (no external AI): set `AI_USE_MOCK=true`
+- Cloud key from DB (recommended): keep `AI_USE_MOCK=false`, then call `POST /ai/connections` to add OpenAI/Gemini keys
+- Local Ollama: add an `ollama` provider in `POST /ai/connections` (see Local AI section below)
+
+Example add OpenAI key to DB:
+
+```json
+POST /ai/connections
+{
+  "name": "openai-main",
+  "providerType": "openai",
+  "apiKey": "sk-...",
+  "priority": 1,
+  "isSelected": true,
+  "isEnabled": true
+}
+```
+
+Run backend:
+
+```bash
+npm run dev
+```
+
+### 2) Check backend is alive
+
+- `GET /` -> `Hello World!`
+- `GET /health` -> health payload
+- `GET /ai/test` -> AI reply (mock or real)
+
+Base URL in local dev is usually `http://localhost:3000`.
+
+### 3) Minimum data setup for guided flow
+
+1. Create category: `POST /categories`
+2. Create chat with that category: `POST /chats`
+3. Use returned `chatId` for guided lifecycle endpoints
+
+### 3.1) How to get `chatId` (exactly)
+
+Create a chat first:
+
+```json
+POST /chats
+{
+  "categoryId": "<yourCategoryId>",
+  "userId": null
+}
+```
+
+You will get a response like:
+
+```json
+{
+  "Id": "5f0f6a84-9ce7-4c9a-8af8-1f8b9f2c9d12",
+  "UserId": null,
+  "CategoryId": "a3e7f8aa-5c44-4d8f-8e49-0a9a7b4c1f02"
+}
+```
+
+Use `Id` from that response as your `chatId` in:
+- `POST /decisions/guided/start/:chatId`
+- `POST /decisions/guided/next/:chatId`
+- `POST /decisions/guided/skip/:chatId`
+- `POST /decisions/guided/finalize/:chatId`
+
+### 4) Guided lifecycle you should call
+
+- `POST /decisions/guided/start/:chatId`
+  - Starts guided flow
+  - Returns first `question` with `options`
+- `POST /decisions/guided/next/:chatId`
+  - Send selected `optionId`
+  - Returns next `question`
+- `POST /decisions/guided/skip/:chatId`
+  - Skip current question
+  - Returns replacement `question`
+- `POST /decisions/guided/finalize/:chatId`
+  - Send final `answers` object
+  - Returns `explores` and persists them
+
+### 5) Simple request examples
+
+Start:
+
+```json
+POST /decisions/guided/start/{{chatId}}
+{}
+```
+
+Next:
+
+```json
+POST /decisions/guided/next/{{chatId}}
+{
+  "optionId": "<optionId>"
+}
+```
+
+Finalize:
+
+```json
+POST /decisions/guided/finalize/{{chatId}}
+{
+  "answers": {
+    "budget": "medium",
+    "distance": "nearby"
+  }
+}
+```
+
+### 6) Clean guided data for one chat (hard delete)
+
+If you want to restart guided flow for a chat, use this endpoint:
+
+```json
+DELETE /conversations/chat/{{chatId}}/hard-clean
+```
+
+This endpoint does hard delete (`DELETE FROM ...`) for only:
+- `answers`
+- `options`
+- `questions`
+- `conversations`
+
+It does **not** delete:
+- `chats`
+- `explores`
+
+Example response:
+
+```json
+{
+  "chatId": "d541b353-651a-4782-81b2-12b09048ef7b",
+  "deleted": {
+    "answers": 0,
+    "options": 4,
+    "questions": 1,
+    "conversations": 1
+  }
+}
+```
+
+Chat shortcut (non-lifecycle):
+
+```json
+POST /decisions/chat
+{
+  "messages": [
+    { "role": "user", "content": "Help me pick dinner tonight" }
+  ]
+}
+```
+
+## Current API Summary
+
+- `POST /decisions/guided` -> one-shot explore suggestions from category + answers
+- `POST /decisions/chat` -> chat reply + explore suggestions
+- `POST /decisions/guided/start/:chatId`
+- `POST /decisions/guided/next/:chatId`
+- `POST /decisions/guided/skip/:chatId`
+- `POST /decisions/guided/finalize/:chatId`
+- `DELETE /conversations/chat/:chatId/hard-clean` -> hard delete guided-tree data only
+
+## Architecture Snapshot
+
+- Workflow orchestration: `src/Application/decisions`
+- Domain modules: `src/Modules/*` (`chat`, `question`, `explore`, `user`, `category`)
+- AI provider layer: `src/ai` (mock by default, OpenAI when configured)
+- Guided persistence: `Conversation`, `Question`, `Option`, `Answer`
+- Final results: `Explore` (+ `Favorite` bridge)
 
 ## Scripts
 
-| Command | Description |
-|--------|-------------|
-| `npm run start:dev` | Run in watch mode (development). |
-| `npm run build` | Compile for production. |
-| `npm run start:prod` | Run compiled app (node dist/main). |
-| `npm run test` | Unit tests. |
-| `npm run test:e2e` | E2E tests (hits `/`, `/ai/test`, `/recommendations/test`). |
+- `npm run dev` - start dev server
+- `npm run build` - compile project
+- `npm run test` - run unit tests
+- `npm run test:e2e` - run e2e tests
 
 ## Environment
 
-See `.env.example`. Required: `DATABASE_*`. Optional: `OPENAI_API_KEY` (if set and not `AI_USE_MOCK=true`, the app uses the real OpenAI API). `AI_USE_MOCK=true` forces the mock provider.
+Required: `DATABASE_*` vars in `.env`.
+
+Optional AI vars:
+- `OPENAI_API_KEY` - use real OpenAI provider
+- `AI_USE_MOCK=true` - force mock provider
+
+## Local AI (Ollama) Setup
+
+Use this if you want local AI fallback (or fully local AI) without cloud quota issues.
+
+### 1) Install and run Ollama
+
+Install Ollama from [https://ollama.com/download](https://ollama.com/download), then start it.
+
+Pull a model:
+
+```bash
+ollama pull llama3.2
+```
+
+Quick check:
+
+```bash
+ollama list
+```
+
+### 2) Add local provider to backend DB
+
+Create an Ollama AI connection:
+
+```json
+POST /ai/connections
+{
+  "name": "local-ollama",
+  "providerType": "ollama",
+  "priority": 1000,
+  "isSelected": true,
+  "isEnabled": true,
+  "endpointUrl": "http://127.0.0.1:11434",
+  "modelName": "llama3.2"
+}
+```
+
+Notes:
+- `priority`: smaller number = higher priority (`1` is highest)
+- `apiKey` is not required for `ollama`
+
+### 3) Activate local provider (optional)
+
+If you created multiple providers, switch active one:
+
+1. `GET /ai/connections`
+2. Copy the local provider `id`
+3. `PATCH /ai/connections/:id/activate`
+
+### 4) Verify local AI connection
+
+- `GET /ai/test` should return a normal AI response
+- `POST /decisions/chat` should return `message` + `explores`
+
+If it fails:
+- Confirm Ollama server is running on `http://127.0.0.1:11434`
+- Confirm model exists (`ollama list`)
+- Confirm `endpointUrl` and `modelName` in DB match Ollama
 
 ## Deployment
 
-Backend is intended to run on **Render**. Set env vars in the Render dashboard (same keys as in `.env.example`). Use `GET /health` (and optionally `GET /ready`) for health checks.
-
----
-
-## NestJS resources
-
-- [NestJS Docs](https://docs.nestjs.com)
-- [NestJS Deployment](https://docs.nestjs.com/deployment)
+Deploy target is Render. Set the same env vars there and use `GET /health` for health checks.

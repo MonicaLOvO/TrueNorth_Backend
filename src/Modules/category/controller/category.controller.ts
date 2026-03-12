@@ -8,26 +8,31 @@ import { CategoryService } from '../service/category.service';
 export class CategoryController {
   constructor(private readonly categoryService: CategoryService) {}
 
+  /** Lists all available categories. */
   @Get()
   getAll() {
     return this.categoryService.findAll();
   }
 
+  /** Returns one category by id. */
   @Get(':id')
   getById(@Param('id') id: string) {
     return this.categoryService.findById(id);
   }
 
+  /** Creates a new category. */
   @Post()
   create(@Body() body: CreateCategoryDto) {
     return this.categoryService.create(body);
   }
 
+  /** Updates an existing category. */
   @Patch(':id')
   update(@Param('id') id: string, @Body() body: CategoryDto) {
     return this.categoryService.update(id, body);
   }
 
+  /** Soft-deletes a category. */
   @Delete(':id')
   @HttpCode(204)
   async remove(@Param('id') id: string): Promise<void> {

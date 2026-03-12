@@ -3,6 +3,7 @@ import { Tracking } from '../../../common/entity/tracking.entity.js';
 import { User } from '../../user/entity/user.entity.js';
 import { Category } from '../../category/entity/category.entity.js';
 import { Explore } from '../../explore/entity/explore.entity.js';
+import { Conversation } from './conversation.entity.js';
 
 @Entity('chats')
 export class Chat extends Tracking {
@@ -16,4 +17,7 @@ export class Chat extends Tracking {
 
   @OneToMany(() => Explore, (explore) => explore.chat)
   explores: Explore[];
+
+  @OneToMany(() => Conversation, (conversation) => conversation.chat)
+  conversations: Conversation[];
 }

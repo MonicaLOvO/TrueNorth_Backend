@@ -38,17 +38,19 @@ describe('AppController (e2e)', () => {
       });
   });
 
-  it('/recommendations/test (GET) returns recommendation cards (A4)', () => {
+  it('/decisions/chat (POST) returns chat reply and explores', () => {
     return request(app.getHttpServer())
-      .get('/recommendations/test')
+      .post('/decisions/chat')
+      .send({
+        messages: [{ role: 'user', content: 'I want a cozy dinner plan.' }],
+      })
       .expect(200)
       .expect((res) => {
-        expect(res.body).toHaveProperty('recommendations');
-        expect(Array.isArray(res.body.recommendations)).toBe(true);
-        expect(res.body.recommendations.length).toBeGreaterThan(0);
-        const card = res.body.recommendations[0];
-        expect(card).toHaveProperty('title');
-        expect(card).toHaveProperty('description');
+        expect(res.body).toHaveProperty('message');
+        expect(typeof res.body.message).toBe('string');
+        expect(res.body.message.length).toBeGreaterThan(0);
+        expect(res.body).toHaveProperty('explores');
+        expect(Array.isArray(res.body.explores)).toBe(true);
       });
   });
 });

@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Chat } from './entity/chat.entity.js';
+import { Conversation } from './entity/conversation.entity.js';
 import {
   autoRegisterControllers,
   autoRegisterProviders,
@@ -10,7 +11,7 @@ const chatControllers = autoRegisterControllers(__dirname);
 const chatProviders = autoRegisterProviders(__dirname);
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Chat])],
+  imports: [TypeOrmModule.forFeature([Chat, Conversation])],
   controllers: chatControllers,
   providers: chatProviders,
   exports: chatProviders,

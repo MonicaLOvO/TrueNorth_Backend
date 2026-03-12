@@ -27,7 +27,7 @@ export class MockLLMProvider implements ILLMProvider {
     const topic = lastUser?.content?.slice(0, 50) ?? 'your request';
 
     return `[Mock AI – no API called] I received: "${topic}...". ` +
-      `Here are 3 sample recommendations: 1) Option A, 2) Option B, 3) Option C. ` +
+      `Here are 3 sample explore options: 1) Option A, 2) Option B, 3) Option C. ` +
       `Set OPENAI_API_KEY in .env to use the real OpenAI API.`;
   }
 }

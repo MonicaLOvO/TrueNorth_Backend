@@ -70,13 +70,19 @@ export default function configuration() {
     // -------------------------------------------------------------------------
     // AI / LLM
     // -------------------------------------------------------------------------
-    /** OpenAI API key. When empty, we use the mock provider (no cost, no API calls). */
+    /** Optional fallback OpenAI API key from env (DB keys are preferred when configured). */
     openaiApiKey: process.env.OPENAI_API_KEY ?? '',
     /**
-     * When true, always use mock provider even if OPENAI_API_KEY is set.
-     * When false, use OpenAI if key is set, otherwise mock. Set AI_USE_MOCK=true to test without spending.
+     * When true, always use mock provider.
+     * When false, use OpenAI provider and read keys from DB (or env fallback key).
      */
-    aiUseMock: process.env.AI_USE_MOCK === 'true' || !process.env.OPENAI_API_KEY?.trim(),
+    aiUseMock: process.env.AI_USE_MOCK === 'true',
+    /** Secret used to encrypt AI provider keys stored in DB. */
+    aiConnectionEncryptionKey: process.env.AI_CONNECTION_ENCRYPTION_KEY ?? '',
+    /** Default local Ollama endpoint used when creating default local provider row. */
+    ollamaBaseUrl: process.env.OLLAMA_BASE_URL ?? 'http://127.0.0.1:11434',
+    /** Default local Ollama model used for local fallback. */
+    ollamaModel: process.env.OLLAMA_MODEL ?? 'llama3.2',
   };
 }
 

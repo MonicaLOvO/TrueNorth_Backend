@@ -23,7 +23,7 @@ export class AiController {
   @Get('test')
   async test() {
     const reply = await this.aiService.generateCompletion([
-      { role: 'user', content: 'What should I eat for dinner tonight?' },
+      { role: 'user', content: 'Reply with exactly: AI test ok' },
     ]);
     return { reply };
   }

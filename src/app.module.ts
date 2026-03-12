@@ -22,11 +22,11 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AiModule } from './ai/ai.module.js';
 import { CategoryModule } from './Modules/category/category.module.js';
-import { RecommendationsModule } from './recommendations/recommendations.module.js';
 import { UserModule } from './Modules/user/user.module.js';
 import { ChatModule } from './Modules/chat/chat.module.js';
 import { ExploreModule } from './Modules/explore/explore.module.js';
-import { DecisionsModule } from './Modules/decisions/decisions.module.js';
+import { QuestionModule } from './Modules/question/question.module.js';
+import { DecisionsModule } from './Application/decisions/decisions.module.js';
 
 @Module({
   imports: [
@@ -35,8 +35,8 @@ import { DecisionsModule } from './Modules/decisions/decisions.module.js';
     UserModule,
     ChatModule,
     ExploreModule,
+    QuestionModule,
     DecisionsModule,
-    RecommendationsModule,
     // -------------------------------------------------------------------------
     // Config: load .env and our configuration. The 'load' array runs
     // configuration() at startup and merges the result into ConfigService.
