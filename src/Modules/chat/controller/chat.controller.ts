@@ -1,13 +1,24 @@
-import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Req, UseGuards } from '@nestjs/common';
+import type { Request } from 'express';
+import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard.js';
 import { ChatService } from '../service/chat.service.js';
 import { CreateChatDto } from '../dto/create-chat.dto.js';
 import { ChatDto } from '../dto/chat.dto.js';
+
+type AuthedRequest = Request & { user: { userId: string; userName: string } };
 
 @Controller('chats')
 export class ChatController {
   constructor(private readonly chatService: ChatService) {}
 
-  /** Lists all chat sessions. */
+  /** Logged-in user's chat sessions only (send Authorization: Bearer …). */
+  @Get('me')
+  @UseGuards(JwtAuthGuard)
+  getMine(@Req() req: AuthedRequest) {
+    return this.chatService.findByUserId(req.user.userId);
+  }
+
+  /** Lists all chat sessions (use sparingly; prefer GET /chats/me for real users). */
   @Get()
   getAll() {
     return this.chatService.findAll();

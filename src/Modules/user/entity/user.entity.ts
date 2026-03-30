@@ -7,8 +7,14 @@ import { Answer } from '../../question/entity/answer.entity.js';
 
 @Entity('users')
 export class User extends Tracking {
-  @Column({ type: 'varchar', length: 100 })
+  @Column({ type: 'varchar', length: 100, unique: true })
   userName: string;
+
+  @Column({ type: 'varchar', length: 255, nullable: true, unique: true })
+  email: string | null;
+
+  @Column({ type: 'varchar', length: 200, nullable: true })
+  displayName: string | null;
 
   @Column({ type: 'varchar', length: 255 })
   password: string;

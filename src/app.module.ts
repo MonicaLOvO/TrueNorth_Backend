@@ -23,6 +23,7 @@ import { AppService } from './app.service';
 import { AiModule } from './ai/ai.module.js';
 import { CategoryModule } from './Modules/category/category.module.js';
 import { UserModule } from './Modules/user/user.module.js';
+import { AuthModule } from './Modules/auth/auth.module.js';
 import { ChatModule } from './Modules/chat/chat.module.js';
 import { ExploreModule } from './Modules/explore/explore.module.js';
 import { QuestionModule } from './Modules/question/question.module.js';
@@ -33,6 +34,7 @@ import { DecisionsModule } from './Application/decisions/decisions.module.js';
     AiModule,
     CategoryModule,
     UserModule,
+    AuthModule,
     ChatModule,
     ExploreModule,
     QuestionModule,

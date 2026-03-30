@@ -22,9 +22,28 @@ DATABASE_PORT=5432
 DATABASE_USERNAME=postgres
 DATABASE_PASSWORD=your_password_here
 DATABASE_NAME=truenorth
+JWT_SECRET=replace_with_a_long_random_secret
 AI_USE_MOCK=false
 AI_CONNECTION_ENCRYPTION_KEY=replace_with_a_long_random_secret
 ```
+
+### Auth (logged-in users)
+
+Full contract for the frontend: **[docs/FRONTEND_API.md](docs/FRONTEND_API.md)**.
+
+- **POST** `/auth/register` — `{ userName, password, email?, displayName? }` → `{ access_token, user }`
+- **POST** `/auth/login` — `{ userName, password }` → same shape
+- **GET** `/auth/me` — Bearer token → current user (`Id`, `UserName`, `Email`, `DisplayName`)
+- **PATCH** `/auth/me` — Bearer token → partial profile update
+- **PATCH** `/auth/password` — Bearer token → `{ currentPassword, newPassword }`
+
+**Favorites** (`/favorites/*`) require Bearer token; `POST` body is only `{ exploreId }` (user comes from token).
+
+**My chats:** `GET /chats/me` with Bearer token.
+
+Passwords are **hashed** (bcrypt). Existing users from before hashing must **register again** or reset in DB.
+
+Optional env: `JWT_EXPIRES_IN_SECONDS` (default **86400** = 1 day).
 
 AI connection setup (pick one):
 - Mock only (no external AI): set `AI_USE_MOCK=true`

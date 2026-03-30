@@ -1,46 +1,74 @@
-import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  ForbiddenException,
+  Get,
+  HttpCode,
+  Param,
+  Patch,
+  Post,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
+import type { Request } from 'express';
+import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard.js';
 import { FavoriteService } from '../service/favorite.service.js';
-import { CreateFavoriteDto } from '../dto/create-favorite.dto.js';
-import { FavoriteDto } from '../dto/favorite.dto.js';
+import { SaveFavoriteDto } from '../dto/save-favorite.dto.js';
+import { UpdateFavoriteExploreDto } from '../dto/update-favorite-explore.dto.js';
 
+type AuthedRequest = Request & { user: { userId: string; userName: string } };
+
+/**
+ * All favorites routes require a logged-in user (Bearer JWT).
+ * userId is never taken from the client body for create — it comes from the token.
+ */
 @Controller('favorites')
+@UseGuards(JwtAuthGuard)
 export class FavoriteController {
   constructor(private readonly favoriteService: FavoriteService) {}
 
-  /** Lists all favorite links. */
+  /** Current user's favorites (recommended for the app UI). */
   @Get()
-  getAll() {
-    return this.favoriteService.findAll();
+  getMine(@Req() req: AuthedRequest) {
+    return this.favoriteService.findByUserId(req.user.userId);
   }
 
-  /** Lists favorites for one user. */
+  /** Same as GET / when :userId matches the token (convenience for explicit URLs). */
   @Get('user/:userId')
-  getByUserId(@Param('userId') userId: string) {
+  getByUserId(@Param('userId') userId: string, @Req() req: AuthedRequest) {
+    if (userId !== req.user.userId) {
+      throw new ForbiddenException('You can only list your own favorites');
+    }
     return this.favoriteService.findByUserId(userId);
   }
 
-  /** Returns one favorite record by id. */
   @Get(':id')
-  getById(@Param('id') id: string) {
-    return this.favoriteService.findById(id);
+  getById(@Param('id') id: string, @Req() req: AuthedRequest) {
+    return this.favoriteService.findByIdForUser(id, req.user.userId);
   }
 
-  /** Creates a user -> explore favorite link. */
   @Post()
-  create(@Body() body: CreateFavoriteDto) {
-    return this.favoriteService.create(body);
+  create(@Body() body: SaveFavoriteDto, @Req() req: AuthedRequest) {
+    return this.favoriteService.createForUser(req.user.userId, body.exploreId);
   }
 
-  /** Updates an existing favorite link. */
   @Patch(':id')
-  update(@Param('id') id: string, @Body() body: FavoriteDto) {
-    return this.favoriteService.update(id, body);
+  update(
+    @Param('id') id: string,
+    @Body() body: UpdateFavoriteExploreDto,
+    @Req() req: AuthedRequest,
+  ) {
+    return this.favoriteService.update(
+      id,
+      { userId: req.user.userId, exploreId: body.exploreId },
+      req.user.userId,
+    );
   }
 
-  /** Soft-deletes one favorite link. */
   @Delete(':id')
   @HttpCode(204)
-  async remove(@Param('id') id: string): Promise<void> {
-    await this.favoriteService.remove(id);
+  async remove(@Param('id') id: string, @Req() req: AuthedRequest): Promise<void> {
+    await this.favoriteService.remove(id, req.user.userId);
   }
 }

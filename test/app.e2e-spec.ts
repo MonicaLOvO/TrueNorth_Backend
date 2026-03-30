@@ -4,6 +4,10 @@ import request from 'supertest';
 import { App } from 'supertest/types';
 import { AppModule } from './../src/app.module';
 
+if (!process.env.JWT_SECRET?.trim()) {
+  process.env.JWT_SECRET = 'e2e-test-jwt-secret-do-not-use-in-production-32';
+}
+
 describe('AppController (e2e)', () => {
   let app: INestApplication<App>;
 

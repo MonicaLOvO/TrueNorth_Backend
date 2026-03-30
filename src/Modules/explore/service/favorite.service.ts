@@ -1,4 +1,9 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { FavoriteRepository } from '../repository/favorite.repository.js';
 import { CreateFavoriteDto } from '../dto/create-favorite.dto.js';
 import { FavoriteDto } from '../dto/favorite.dto.js';
@@ -46,36 +51,56 @@ export class FavoriteService {
     return this.mapEntityToModel(saved);
   }
 
-  async update(id: string, input: FavoriteDto): Promise<FavoriteModel> {
+  /** Used when userId comes from JWT (body should only send exploreId). */
+  async createForUser(userId: string, exploreId: string): Promise<FavoriteModel> {
+    if (!exploreId?.trim()) {
+      throw new BadRequestException('exploreId is required');
+    }
+    return this.create({ userId, exploreId: exploreId.trim() });
+  }
+
+  async update(id: string, input: FavoriteDto, actingUserId: string): Promise<FavoriteModel> {
     const entity = await this.favoriteRepository.findById(id);
     if (!entity) {
       throw new NotFoundException(`Favorite with id '${id}' not found`);
     }
+    this.assertFavoriteOwner(entity, actingUserId);
 
-    const normalizedUserId = input.userId ?? (input as { UserId?: string }).UserId;
     const normalizedExploreId = input.exploreId ?? (input as { ExploreId?: string }).ExploreId;
-
-    if (!normalizedUserId?.trim()) {
-      throw new BadRequestException('userId is required');
-    }
 
     if (!normalizedExploreId?.trim()) {
       throw new BadRequestException('exploreId is required');
     }
 
-    entity.user = { Id: normalizedUserId.trim() } as Favorite['user'];
     entity.explore = { Id: normalizedExploreId.trim() } as Favorite['explore'];
 
     const saved = await this.favoriteRepository.save(entity);
     return this.mapEntityToModel(saved);
   }
 
-  async remove(id: string): Promise<void> {
+  async remove(id: string, actingUserId: string): Promise<void> {
     const entity = await this.favoriteRepository.findById(id);
     if (!entity) {
       throw new NotFoundException(`Favorite with id '${id}' not found`);
     }
+    this.assertFavoriteOwner(entity, actingUserId);
     await this.favoriteRepository.softDeleteById(id);
+  }
+
+  async findByIdForUser(id: string, actingUserId: string): Promise<FavoriteModel> {
+    const entity = await this.favoriteRepository.findById(id);
+    if (!entity) {
+      throw new NotFoundException(`Favorite with id '${id}' not found`);
+    }
+    this.assertFavoriteOwner(entity, actingUserId);
+    return this.mapEntityToModel(entity);
+  }
+
+  private assertFavoriteOwner(entity: Favorite, userId: string): void {
+    const ownerId = entity.user?.Id;
+    if (!ownerId || ownerId !== userId) {
+      throw new ForbiddenException('You can only access your own favorites');
+    }
   }
 
   private mapEntityToModel(entity: Favorite): FavoriteModel {

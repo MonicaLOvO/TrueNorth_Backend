@@ -4,7 +4,7 @@
  * =============================================================================
  */
 
-import { Body, Controller, Param, Post } from '@nestjs/common';
+import { Body, Controller, HttpCode, Param, Post } from '@nestjs/common';
 import { DecisionsService } from '../service/decisions.service.js';
 import type { GuidedRequestDto } from '../dto/guided-request.dto.js';
 import type { ChatRequestDto } from '../dto/chat-request.dto.js';
@@ -18,12 +18,14 @@ export class DecisionsController {
 
   /** One-shot guided request (legacy-compatible shortcut). */
   @Post('guided')
+  @HttpCode(200)
   async guided(@Body() body: GuidedRequestDto) {
     return this.decisionsService.guidedFlow(body.categoryId, body.answers ?? {});
   }
 
   /** Free-form chat request that returns AI text + explore suggestions. */
   @Post('chat')
+  @HttpCode(200)
   async chat(@Body() body: ChatRequestDto) {
     return this.decisionsService.chatFlow(body.messages ?? []);
   }

@@ -83,6 +83,16 @@ export default function configuration() {
     ollamaBaseUrl: process.env.OLLAMA_BASE_URL ?? 'http://127.0.0.1:11434',
     /** Default local Ollama model used for local fallback. */
     ollamaModel: process.env.OLLAMA_MODEL ?? 'llama3.2',
+
+    // -------------------------------------------------------------------------
+    // JWT – used by AuthModule for login / register (Bearer tokens)
+    // -------------------------------------------------------------------------
+    jwt: {
+      /** Required for auth. Generate a long random string for production. */
+      secret: process.env.JWT_SECRET ?? '',
+      /** Access token lifetime in seconds (default 1 day). */
+      expiresInSeconds: parseInt(process.env.JWT_EXPIRES_IN_SECONDS ?? '86400', 10),
+    },
   };
 }
 
