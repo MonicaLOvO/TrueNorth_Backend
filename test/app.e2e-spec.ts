@@ -42,7 +42,7 @@ describe('AppController (e2e)', () => {
       });
   });
 
-  it('/decisions/chat (POST) returns chat reply and explores', () => {
+  it('/decisions/chat (POST) returns chat reply and explores without auth', () => {
     return request(app.getHttpServer())
       .post('/decisions/chat')
       .send({
@@ -50,6 +50,46 @@ describe('AppController (e2e)', () => {
       })
       .expect(200)
       .expect((res) => {
+        expect(res.body).toHaveProperty('message');
+        expect(typeof res.body.message).toBe('string');
+        expect(res.body.message.length).toBeGreaterThan(0);
+        expect(res.body).toHaveProperty('explores');
+        expect(Array.isArray(res.body.explores)).toBe(true);
+      });
+  });
+});
+
+describe('Decisions chat audio (e2e)', () => {
+  let app: INestApplication<App>;
+
+  beforeEach(async () => {
+    process.env.AI_USE_MOCK = 'true';
+    const moduleFixture: TestingModule = await Test.createTestingModule({
+      imports: [AppModule],
+    }).compile();
+
+    app = moduleFixture.createNestApplication();
+    await app.init();
+  });
+
+  afterEach(async () => {
+    await app?.close();
+    delete process.env.AI_USE_MOCK;
+  });
+
+  /**
+   * With AI_USE_MOCK, Whisper is skipped and a fixed transcript is used, so no real audio file is required.
+   * Route is public: no Bearer token.
+   */
+  it('/decisions/chat/audio (POST) returns transcript, message, and explores without auth', () => {
+    return request(app.getHttpServer())
+      .post('/decisions/chat/audio')
+      .attach('audio', Buffer.from([0x1a]), 'placeholder.webm')
+      .expect(200)
+      .expect((res) => {
+        expect(res.body).toHaveProperty('transcript');
+        expect(typeof res.body.transcript).toBe('string');
+        expect(res.body.transcript).toContain('Mock voice message');
         expect(res.body).toHaveProperty('message');
         expect(typeof res.body.message).toBe('string');
         expect(res.body.message.length).toBeGreaterThan(0);

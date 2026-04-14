@@ -21,6 +21,7 @@ import { OpenAIProvider } from './providers/openai.provider';
 import { AiController } from './ai.controller.js';
 import { AiService } from './ai.service.js';
 import { AiConnectionModule } from '../Modules/ai-connection/ai-connection.module.js';
+import { SpeechTranscriptionService } from './speech-transcription.service.js';
 
 @Module({
   imports: [ConfigModule, AiConnectionModule],
@@ -28,6 +29,7 @@ import { AiConnectionModule } from '../Modules/ai-connection/ai-connection.modul
   providers: [
     MockLLMProvider,
     OpenAIProvider,
+    SpeechTranscriptionService,
     // -------------------------------------------------------------------------
     // Bind the abstract "LLM provider" to the real implementation.
     // Nest will inject whichever class we provide here into AiService.
@@ -49,6 +51,6 @@ import { AiConnectionModule } from '../Modules/ai-connection/ai-connection.modul
     },
     AiService,
   ],
-  exports: [AiService],
+  exports: [AiService, SpeechTranscriptionService],
 })
 export class AiModule {}

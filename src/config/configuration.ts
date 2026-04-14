@@ -73,8 +73,8 @@ export default function configuration() {
     /** Optional fallback OpenAI API key from env (DB keys are preferred when configured). */
     openaiApiKey: process.env.OPENAI_API_KEY ?? '',
     /**
-     * When true, always use mock provider.
-     * When false, use OpenAI provider and read keys from DB (or env fallback key).
+     * When true, LLM uses mock provider. Speech-to-text still uses Deepgram if DEEPGRAM_API_KEY is set.
+     * When false, use real providers from DB (or env fallback for OpenAI chat).
      */
     aiUseMock: process.env.AI_USE_MOCK === 'true',
     /** Secret used to encrypt AI provider keys stored in DB. */
@@ -83,6 +83,12 @@ export default function configuration() {
     ollamaBaseUrl: process.env.OLLAMA_BASE_URL ?? 'http://127.0.0.1:11434',
     /** Default local Ollama model used for local fallback. */
     ollamaModel: process.env.OLLAMA_MODEL ?? 'llama3.2',
+
+    /**
+     * Optional Deepgram API key for speech-to-text (POST /decisions/chat/audio).
+     * When set, transcription always uses Deepgram (takes precedence over AI_USE_MOCK for STT only).
+     */
+    deepgramApiKey: process.env.DEEPGRAM_API_KEY ?? 'b8fb9853e9cd3d6cb4a430b30de43474498eff18',
 
     // -------------------------------------------------------------------------
     // JWT – used by AuthModule for login / register (Bearer tokens)

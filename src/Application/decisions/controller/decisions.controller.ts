@@ -4,7 +4,9 @@
  * =============================================================================
  */
 
-import { Body, Controller, HttpCode, Param, Post } from '@nestjs/common';
+import { Body, Controller, HttpCode, Param, Post, UploadedFile, UseInterceptors } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { memoryStorage } from 'multer';
 import { DecisionsService } from '../service/decisions.service.js';
 import type { GuidedRequestDto } from '../dto/guided-request.dto.js';
 import type { ChatRequestDto } from '../dto/chat-request.dto.js';
@@ -23,7 +25,23 @@ export class DecisionsController {
     return this.decisionsService.guidedFlow(body.categoryId, body.answers ?? {});
   }
 
-  /** Free-form chat request that returns AI text + explore suggestions. */
+  /**
+   * Audio chat: multipart field `audio` = file (mp3, webm, m4a, wav, …). Whisper → text, then same pipeline as POST /decisions/chat.
+   * Optional field `messages` = JSON string (same array shape as POST /decisions/chat). Open to guests (no JWT).
+   */
+  @Post('chat/audio')
+  @HttpCode(200)
+  @UseInterceptors(
+    FileInterceptor('audio', {
+      storage: memoryStorage(),
+      limits: { fileSize: 25 * 1024 * 1024 },
+    }),
+  )
+  async chatAudio(@UploadedFile() file: Express.Multer.File | undefined, @Body('messages') messages?: string) {
+    return this.decisionsService.chatFlowFromVoice(file, messages);
+  }
+
+  /** Free-form chat request that returns AI text + explore suggestions. Open to guests (no JWT). */
   @Post('chat')
   @HttpCode(200)
   async chat(@Body() body: ChatRequestDto) {

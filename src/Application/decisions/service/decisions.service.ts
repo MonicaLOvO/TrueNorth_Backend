@@ -1,7 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { CategoryService } from '../../../Modules/category/service/category.service.js';
-import type { GuidedResponseDto, ChatResponseDto } from '../dto/decisions-response.dto';
+import type { GuidedResponseDto, ChatResponseDto, VoiceChatResponseDto } from '../dto/decisions-response.dto';
 import { AiOrchestratorService } from '../logic/ai-orchestrator.service';
+import { SpeechTranscriptionService } from '../../../ai/speech-transcription.service.js';
 import type { GuidedLifecycleResponseDto } from '../dto/guided-lifecycle-response.dto';
 import { ChatService } from '../../../Modules/chat/service/chat.service.js';
 import { ExploreService } from '../../../Modules/explore/service/explore.service.js';
@@ -21,6 +22,7 @@ export class DecisionsService {
     private readonly conversationService: ConversationService,
     private readonly questionService: QuestionService,
     private readonly answerService: AnswerService,
+    private readonly speechTranscription: SpeechTranscriptionService,
   ) {}
 
   async guidedFlow(categoryId: string, answers: Record<string, string>): Promise<GuidedResponseDto> {
@@ -42,6 +44,62 @@ export class DecisionsService {
     });
 
     return { message: reply, explores };
+  }
+
+  /**
+   * Transcribes uploaded audio (Whisper), appends it as the latest user message, then runs the same chat pipeline as POST /decisions/chat.
+   * Optional `messages` (JSON array) carries prior turns, same shape as ChatRequestDto.messages. Used by POST /decisions/chat/audio.
+   */
+  async chatFlowFromVoice(
+    file: Express.Multer.File | undefined,
+    messagesJson: string | undefined,
+  ): Promise<VoiceChatResponseDto> {
+    if (!file?.buffer?.length) {
+      throw new BadRequestException('Audio file is required (form field name: audio).');
+    }
+
+    const prior = this.parseOptionalChatMessages(messagesJson);
+    const transcript = await this.speechTranscription.transcribe(
+      file.buffer,
+      file.originalname || 'recording.webm',
+      file.mimetype,
+    );
+    const messages = [...prior, { role: 'user' as const, content: transcript }];
+    const chat = await this.chatFlow(messages);
+    return { ...chat, transcript };
+  }
+
+  private parseOptionalChatMessages(messagesJson: string | undefined): Array<{
+    role: 'system' | 'user' | 'assistant';
+    content: string;
+  }> {
+    const raw = messagesJson?.trim();
+    if (!raw) {
+      return [];
+    }
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(raw);
+    } catch {
+      throw new BadRequestException('messages must be valid JSON.');
+    }
+    if (!Array.isArray(parsed)) {
+      throw new BadRequestException('messages must be a JSON array.');
+    }
+    return parsed.map((item, index) => {
+      if (!item || typeof item !== 'object') {
+        throw new BadRequestException(`messages[${index}] must be an object.`);
+      }
+      const role = (item as { role?: unknown }).role;
+      const content = (item as { content?: unknown }).content;
+      if (role !== 'system' && role !== 'user' && role !== 'assistant') {
+        throw new BadRequestException(`messages[${index}].role must be system, user, or assistant.`);
+      }
+      if (typeof content !== 'string' || !content.trim()) {
+        throw new BadRequestException(`messages[${index}].content must be a non-empty string.`);
+      }
+      return { role, content: content.trim() };
+    });
   }
 
   async startGuided(chatId: string): Promise<GuidedLifecycleResponseDto> {

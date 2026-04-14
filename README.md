@@ -200,10 +200,97 @@ POST /decisions/chat
 }
 ```
 
+### Voice chat — `POST /decisions/chat/audio` (frontend)
+
+Use this when the user speaks instead of typing. The backend transcribes the recording, then runs the **same chat pipeline** as `POST /decisions/chat`, so the response shape matches text chat **plus** the raw transcript.
+
+**Authentication:** None. Guests can call this endpoint (no Bearer token).
+
+**Request**
+
+- **Method:** `POST`
+- **URL:** `{baseUrl}/decisions/chat/audio` (e.g. `http://localhost:3000/decisions/chat/audio`)
+- **Body:** `multipart/form-data` (not JSON)
+- **Required field**
+  - **`audio`** — type **File**: the recorded audio (e.g. `.webm`, `.m4a`, `.mp3`, `.wav`). Field name must be exactly `audio`.
+- **Optional field**
+  - **`messages`** — type **Text**: a **JSON string** of the prior conversation, same array shape as `POST /decisions/chat`:
+
+    `[{ "role": "user" | "assistant" | "system", "content": "..." }, ...]`
+
+    The server appends the transcribed speech as a new **user** message after this history. Omit or send `[]` for a single-turn “only this recording” request.
+
+**Example (conceptual)**
+
+- Postman / Insomnia: Body → form-data → row `audio` = File, row `messages` = Text (optional JSON string).
+- Browser: `FormData`: `formData.append('audio', fileBlob, 'recording.webm')`; optionally `formData.append('messages', JSON.stringify(priorMessages))`.
+- Do **not** set `Content-Type` manually when using `FormData` in the browser; the runtime sets the boundary.
+
+**Success response — HTTP 200**
+
+JSON object with three top-level fields:
+
+| Field | Meaning |
+| --- | --- |
+| **`transcript`** | Text produced by speech-to-text from the uploaded `audio` file. |
+| **`message`** | Assistant reply from the AI, as if the user had typed `transcript` in chat. |
+| **`explores`** | Array of explore suggestions (same idea as `POST /decisions/chat`). Items may include `name`, `description`, `url`, `location`, `imageUrl`, etc. |
+
+**Example response**
+
+```json
+{
+  "transcript": "Hello? Can you hear me?",
+  "message": "I'm here! I can hear you loud and clear. How are you feeling today?",
+  "explores": [
+    {
+      "name": "Explore Result",
+      "description": "…",
+      "url": null,
+      "location": null,
+      "imageUrl": null
+    }
+  ]
+}
+```
+
+**Errors**
+
+- **`400`** — missing/empty `audio`, bad `messages` JSON, transcription failure, or invalid audio.
+- **Limits** — max upload size **25 MB** per file (server-enforced).
+
+**Backend note (ops only):** Speech-to-text uses **Deepgram** when `DEEPGRAM_API_KEY` is set in `.env`; otherwise (without mock mode) Whisper via an OpenAI key in the **AI connections** DB. `AI_USE_MOCK=true` still forces a fake transcript unless `DEEPGRAM_API_KEY` is set (Deepgram takes priority for STT).
+
+---
+
+### Copy for Microsoft Teams (voice API)
+
+You can paste the block below into Teams when sharing with the team (e.g. with a Postman screenshot of a `200` response).
+
+```
+TrueNorth — voice / audio chat API (for frontend)
+
+We can send a voice recording to the backend instead of plain text chat.
+
+• Endpoint: POST {server}/decisions/chat/audio
+• Body: multipart/form-data
+• Required field: "audio" = the audio file (recording)
+• Optional field: "messages" = JSON string of prior chat turns (same format as POST /decisions/chat), if you need context
+• Auth: not required for this route
+
+The JSON response has three parts:
+1) transcript — what the user actually said (speech-to-text)
+2) message — the assistant’s reply (same as text chat)
+3) explores — suggested “cards” / follow-ups, same as text chat
+
+I’m attaching a Postman example: 200 OK with sample transcript + message + explores so you can see the shape end-to-end.
+```
+
 ## Current API Summary
 
 - `POST /decisions/guided` -> one-shot explore suggestions from category + answers
-- `POST /decisions/chat` -> chat reply + explore suggestions
+- `POST /decisions/chat` -> chat reply + explore suggestions (JSON body; no auth required)
+- `POST /decisions/chat/audio` -> multipart audio → transcript + chat reply + explore suggestions (no auth required)
 - `POST /decisions/guided/start/:chatId`
 - `POST /decisions/guided/next/:chatId`
 - `POST /decisions/guided/skip/:chatId`
@@ -230,8 +317,9 @@ POST /decisions/chat
 Required: `DATABASE_*` vars in `.env`.
 
 Optional AI vars:
-- `OPENAI_API_KEY` - use real OpenAI provider
-- `AI_USE_MOCK=true` - force mock provider
+- `OPENAI_API_KEY` - use real OpenAI provider (chat path; env fallback when no DB key)
+- `DEEPGRAM_API_KEY` - speech-to-text for `POST /decisions/chat/audio` (takes priority for STT when set)
+- `AI_USE_MOCK=true` - mock LLM; STT still uses Deepgram if `DEEPGRAM_API_KEY` is set
 
 ## Local AI (Ollama) Setup
 
