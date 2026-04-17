@@ -48,7 +48,12 @@ Optional env: `JWT_EXPIRES_IN_SECONDS` (default **86400** = 1 day).
 AI connection setup (pick one):
 - Mock only (no external AI): set `AI_USE_MOCK=true`
 - Cloud key from DB (recommended): keep `AI_USE_MOCK=false`, then call `POST /ai/connections` to add OpenAI/Gemini keys
+- Env OpenAI key (simplest for local demo): set `AI_USE_MOCK=false` and `OPENAI_API_KEY=sk-...` in `.env` (used for chat and for Whisper on `POST /decisions/chat/audio` when Deepgram is not set)
 - Local Ollama: add an `ollama` provider in `POST /ai/connections` (see Local AI section below)
+
+Voice / speech-to-text (for `POST /decisions/chat/audio`):
+- Optional: set `DEEPGRAM_API_KEY` to use Deepgram (takes precedence).
+- Otherwise, with `AI_USE_MOCK=false`, Whisper uses your OpenAI key from **`OPENAI_API_KEY`** or from an enabled **OpenAI** row in `/ai/connections`.
 
 Example add OpenAI key to DB:
 

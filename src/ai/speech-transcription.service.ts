@@ -134,9 +134,8 @@ export class SpeechTranscriptionService {
     }
 
     const candidates = await this.aiConnectionService.getProviderCandidates();
-    const openai = candidates.find(
-      (c) => c.source === 'db' && c.providerType === 'openai' && c.apiKey?.trim(),
-    );
+    // Env fallback OPENAI_API_KEY is exposed as source "env" in getProviderCandidates().
+    const openai = candidates.find((c) => c.providerType === 'openai' && c.apiKey?.trim());
     if (!openai?.apiKey?.trim()) {
       throw new BadRequestException(
         'Voice input needs speech-to-text. Set DEEPGRAM_API_KEY or add an enabled OpenAI AI connection for Whisper.',

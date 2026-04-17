@@ -88,7 +88,7 @@ export default function configuration() {
      * Optional Deepgram API key for speech-to-text (POST /decisions/chat/audio).
      * When set, transcription always uses Deepgram (takes precedence over AI_USE_MOCK for STT only).
      */
-    deepgramApiKey: process.env.DEEPGRAM_API_KEY ?? 'b8fb9853e9cd3d6cb4a430b30de43474498eff18',
+    deepgramApiKey: process.env.DEEPGRAM_API_KEY ?? '',
 
     // -------------------------------------------------------------------------
     // JWT – used by AuthModule for login / register (Bearer tokens)

@@ -108,6 +108,10 @@ These typically do **not** require auth unless you add guards later.
 
 - **Guided (one-shot):** `POST /decisions/guided` — `{ "categoryId", "answers": { ... } }` — **HTTP 200**
 - **Chat (free-form):** `POST /decisions/chat` — `{ "messages": [ { "role", "content" } ] }` — **HTTP 200**
+- **Chat (voice / audio):** `POST /decisions/chat/audio` — `multipart/form-data`
+  - Field **`audio`**: audio file (e.g. webm, mp3, m4a)
+  - Optional field **`messages`**: JSON **string** of the same `messages` array as `POST /decisions/chat` (prior turns). The server transcribes `audio`, appends it as the latest user message, then runs the same chat pipeline.
+  - Response JSON: `{ "transcript", "message", "explores" }` (same `message` / `explores` shape as text chat).
 - **Guided lifecycle:** `POST /decisions/guided/start/:chatId`, `.../next/:chatId`, `.../skip/:chatId`, `.../finalize/:chatId`
 
 See README for full product notes and AI connection setup.
